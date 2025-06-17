@@ -26,39 +26,36 @@ export default function App() {
       : "http://localhost:8123",
     assistantId: "agent",
     messagesKey: "messages",
-    onFinish: (event: any) => {
+    onFinish: (event: unknown) => {
       console.log(event);
     },
-    onUpdateEvent: (event: any) => {
+    onUpdateEvent: (event: unknown) => {
       let processedEvent: ProcessedEvent | null = null;
-      if (event.generate_query) {
+      const evt = event as Record<string, unknown>;
+      if (evt.generate_query) {
         processedEvent = {
           title: "Generating Search Queries",
-          data: event.generate_query.query_list.join(", "),
+          data: evt.generate_query.query_list.join(", "),
         };
-      } else if (event.web_research) {
-        const sources = event.web_research.sources_gathered || [];
+      } else if (evt.web_research) {
+        const sources = (evt.web_research.sources_gathered || []) as Array<{ label?: string }>;
         const numSources = sources.length;
         const uniqueLabels = [
-          ...new Set(sources.map((s: any) => s.label).filter(Boolean)),
+          ...new Set(sources.map((s) => s.label).filter(Boolean)),
         ];
         const exampleLabels = uniqueLabels.slice(0, 3).join(", ");
         processedEvent = {
           title: "Web Research",
-          data: `Gathered ${numSources} sources. Related to: ${
-            exampleLabels || "N/A"
-          }.`,
+          data: `Gathered ${numSources} sources. Related to: ${exampleLabels || "N/A"}.`,
         };
-      } else if (event.reflection) {
+      } else if (evt.reflection) {
         processedEvent = {
           title: "Reflection",
-          data: event.reflection.is_sufficient
+          data: evt.reflection.is_sufficient
             ? "Search successful, generating final answer."
-            : `Need more information, searching for ${event.reflection.follow_up_queries.join(
-                ", "
-              )}`,
+            : `Need more information, searching for ${evt.reflection.follow_up_queries.join(", ")}`,
         };
-      } else if (event.finalize_answer) {
+      } else if (evt.finalize_answer) {
         processedEvent = {
           title: "Finalizing Answer",
           data: "Composing and presenting the final answer.",
